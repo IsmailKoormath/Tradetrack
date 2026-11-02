@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
 import type { Account, Trade } from '../../types/trade'
-import { accountNet, totalsByCurrency } from '../../utils/currencyUtils'
+import { accountNet, convert, totalsByCurrency } from '../../utils/currencyUtils'
 import { fmt } from '../../utils/pnlCalculations'
+import type { DisplayPref } from '../../utils/currencyUtils'
 import AccountForm from './AccountForm'
-interface P { accounts: Account[]; trades: Trade[]; activeId: string; onSwitch: (id: string) => void; onSave: (a: Account) => void; onDelete: (id: string) => void; onClose: () => void }
+interface P { accounts: Account[]; trades: Trade[]; activeId: string; onSwitch: (id: string) => void; onSave: (a: Account) => void; onDelete: (id: string) => void; pref: DisplayPref; onPref: (p: DisplayPref) => void; onClose: () => void }
 const tone = (n: number) => (n > 0 ? 'text-profit' : n < 0 ? 'text-loss' : 'text-flat')
-export default function AccountsPanel({ accounts, trades, activeId, onSwitch, onSave, onDelete, onClose }: P) {
+export default function AccountsPanel({ accounts, trades, activeId, onSwitch, onSave, onDelete, pref, onPref, onClose }: P) {
+  const target = pref === 'native' ? 'USD' : pref
+  const combined = accounts.reduce((s, a) => s + convert(accountNet(trades, a.id), a.currency, target), 0)
   const [editing, setEditing] = useState<Account | 'new' | null>(null)
   const [confirm, setConfirm] = useState<string | null>(null)
   const totals = Object.entries(totalsByCurrency(trades, accounts))
@@ -19,6 +22,10 @@ export default function AccountsPanel({ accounts, trades, activeId, onSwitch, on
         <div className="mt-3 rounded-lg bg-bg2 border border-line p-3">
           <p className="text-xs text-dim">All-time net, kept separate by currency</p>
           <div className="flex gap-6 mt-1">{totals.map(([c, v]) => <span key={c} className={`font-semibold ${tone(v ?? 0)}`}>{fmt(v ?? 0)} {c}</span>)}</div>
+          <p className="mt-2 text-xs text-dim">Combined in {target}: <span className={`font-semibold ${tone(combined)}`}>{fmt(combined)}</span> (100 USC = 1 USD)</p>
+          <label className="flex items-center justify-between mt-2 text-xs text-dim">Display currency
+            <select value={pref} onChange={e => onPref(e.target.value as DisplayPref)} className="bg-card border border-line rounded px-2 py-1 text-ink">
+              <option value="native">Each account's own</option><option value="USD">USD</option><option value="USC">USC (cent)</option></select></label>
         </div>
         <ul className="mt-3 divide-y divide-line">
           {accounts.map(a => {

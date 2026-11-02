@@ -5,7 +5,7 @@ export const accounts: Account[] = [
 ]
 let n = 0
 const t = (date: string, time: string, symbol: string, direction: 'BUY' | 'SELL', lots: number, pnl: number, accountId = 'a1'): Trade =>
-  ({ id: `t${++n}`, accountId, date, time, symbol, direction, lots, pnl })
+  ({ id: `t${++n}`, accountId, timestamp: `${date}T${time}:00.000Z`, symbol, direction, lots, pnl })
 export const trades: Trade[] = [
   t('2026-10-03', '09:15', 'XAUUSD', 'BUY', 0.1, 80), t('2026-10-03', '14:40', 'XAUUSD', 'SELL', 0.1, 40),
   t('2026-10-06', '10:05', 'EURUSD', 'SELL', 0.2, -45),
