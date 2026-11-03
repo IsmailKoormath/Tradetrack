@@ -7,28 +7,23 @@ import DayDetails from '../components/calendar/DayDetails'
 import QuickActions from '../components/dashboard/QuickActions'
 import TradeForm from '../components/trades/TradeForm'
 import AccountsPanel from '../components/accounts/AccountsPanel'
-import { useAccounts } from '../hooks/useAccounts'
-import { useTrades } from '../hooks/useTrades'
-import { usePreferences } from '../hooks/usePreferences'
+import type { Store } from '../hooks/useStore'
+import type { View } from '../components/layout/BottomNav'
 import { dailyTotals, monthStats } from '../utils/pnlCalculations'
 import { dayKey, monthKey } from '../utils/dateUtils'
 import { convert } from '../utils/currencyUtils'
 import { utcToZoned } from '../utils/timezoneUtils'
 import type { Account, LocalTrade, Trade } from '../types/trade'
 import { put } from '../database/indexedDB'
-import { startFresh, type LoadedData } from '../services/storageService'
+import { startFresh } from '../services/storageService'
 
 type FormState = { trade?: LocalTrade; date: string } | null
-export default function Dashboard({ initial }: { initial: LoadedData }) {
-  const { trades, add, update, remove, removeByAccount, reset: resetTrades } = useTrades(initial.trades)
-  const { accounts, save: saveAccount, remove: removeAccount, reset: resetAccounts } = useAccounts(initial.accounts)
-  const { pref, setPref } = usePreferences()
+export default function Dashboard({ store, onNavigate }: { store: Store; onNavigate: (v: View) => void }) {
+  const { trades, add, update, remove, removeByAccount, resetTrades, accounts, saveAccount, removeAccount, resetAccounts, pref, setPref, accountId, setAccountId, demo, setDemo, persistent } = store
   const [managing, setManaging] = useState(false)
-  const [accountId, setAccountId] = useState(accounts[0].id)
   const [month, setMonth] = useState(new Date())
   const [selected, setSelected] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(null)
-  const [demo, setDemo] = useState(initial.demo)
   const [confirmClear, setConfirmClear] = useState(false)
   const account = accounts.find(a => a.id === accountId) ?? accounts[0]
   const tzOf = (id: string) => accounts.find(a => a.id === id)?.timezone ?? 'UTC'
@@ -55,7 +50,7 @@ export default function Dashboard({ initial }: { initial: LoadedData }) {
     <main className="mx-auto max-w-3xl px-4 pt-4 pb-28">
       <Header account={account} accounts={accounts} onAccount={setAccountId} month={month}
         onPrev={() => setMonth(subMonths(month, 1))} onNext={() => setMonth(addMonths(month, 1))} onManage={() => setManaging(true)} />
-      {!initial.persistent && <p className="mb-4 rounded-lg border border-line bg-card p-3 text-xs text-loss">Storage is unavailable in this browser mode, so changes won't be saved after you close the tab.</p>}
+      {!persistent && <p className="mb-4 rounded-lg border border-line bg-card p-3 text-xs text-loss">Storage is unavailable in this browser mode, so changes won't be saved after you close the tab.</p>}
       {demo && <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-line bg-card p-3 text-xs text-dim">
         <span>{confirmClear ? 'Delete ALL trades and accounts?' : "You're viewing demo data."}</span>
         {confirmClear ? <span className="flex gap-3"><button onClick={clearDemo} className="font-semibold text-loss">Delete all</button><button onClick={() => setConfirmClear(false)}>Cancel</button></span>
@@ -65,7 +60,7 @@ export default function Dashboard({ initial }: { initial: LoadedData }) {
         <Summary s={{ ...stats, net: stats.net * rate }} currency={viewCurrency} />
         <Calendar month={month} totals={totals} selected={selected} onSelect={setSelected} />
       </div>
-      <QuickActions currency={viewCurrency} onAdd={() => setForm({ date: dayKey(new Date()) })} />
+      <QuickActions currency={viewCurrency} onAdd={() => setForm({ date: dayKey(new Date()) })} onAnalytics={() => onNavigate('analytics')} />
       {selected && <DayDetails date={selected} trades={monthTrades.filter(t => t.date === selected)} currency={viewCurrency} rate={rate}
         onClose={() => setSelected(null)} onAdd={() => setForm({ date: selected })} onEdit={t => setForm({ trade: t, date: t.date })} onDelete={remove} />}
       {managing && <AccountsPanel accounts={accounts} trades={trades} activeId={account.id} onSwitch={setAccountId} onSave={saveAccount}

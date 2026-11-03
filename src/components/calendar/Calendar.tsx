@@ -15,11 +15,12 @@ export default function Calendar({ month, totals, selected, onSelect }: P) {
           const tone = !t || t.pnl === 0 ? 'bg-transparent' : t.pnl > 0 ? 'bg-[#06170e]' : 'bg-[#250707]'
           const txt = !t || t.pnl === 0 ? 'text-flat' : t.pnl > 0 ? 'text-profit' : 'text-loss'
           return (
-            <button key={k} onClick={() => onSelect(k)} aria-label={`${format(d, 'PPP')}${t ? ` ${fmt(t.pnl)}` : ''}`}
-              className={`h-14 sm:h-16 rounded-lg flex flex-col items-center justify-center ${tone}
+            <button key={k} onClick={() => onSelect(k)} aria-label={`${format(d, 'PPP')}${t ? ` ${fmt(t.pnl)}, ${t.count} trades` : ''}`}
+              className={`h-[3.75rem] sm:h-[4.5rem] rounded-lg flex flex-col items-center justify-center ${tone}
               ${isToday(d) ? 'ring-1 ring-dim' : ''} ${selected === k ? 'outline outline-1 outline-ink' : ''}`}>
               <span className="text-[15px]">{d.getDate()}</span>
               {t && <span className={`text-[11px] ${txt}`}>{fmt(t.pnl)}</span>}
+              {t && <span className="text-[10px] text-dim">{t.count} {t.count === 1 ? 'trade' : 'trades'}</span>}
             </button>
           )
         })}
